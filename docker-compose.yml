@@ -1,0 +1,49 @@
+version: "3"
+volumes:
+  volume_database_project:
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: project_mysql
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+      MYSQL_ROOT_PASSWORD:
+      MYSQL_DATABASE: project
+      MYSQL_USER: project
+      MYSQL_PASSWORD: project
+    volumes:
+      - volume_database_project:/var/lib/mysql
+    ports:
+      - "3301:3306"
+    networks:
+      - app-network
+
+
+  web:
+    build: ./.docker
+    container_name: project_web
+    volumes:
+      - ./:/var/www/html
+      - ./.docker/virtualhost.conf:/etc/apache2/sites-available/000-default.conf
+      - ./.docker/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
+    ports:
+      - "81:80"
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: project_mailhog
+    ports:
+      - "1025:1025" # smtp server
+      - "8025:8025" # web ui
+    networks:
+      - app-network
+
+
+networks:
+  app-network:
+    driver: bridge
